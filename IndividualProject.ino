@@ -1,4 +1,3 @@
-#include "GyverFilters.h"
 #include "GyverButton.h"
 #include "VoltageSensor.h"
 const int VOLTAGE_PIN = 34;
@@ -7,22 +6,17 @@ const int ELECTROLYTE_BUTTON_PIN = 32;
 
 const float WATER_COEFFICIENT = 1.2;
 const float ELECTROLYTE_COEFFICIENT = 3.0;
+const float SOIL_VOLUME = 100.0; // ml
 
-GKalman testFilter(4095, 0.7);
 VoltageSensor voltageSensor(VOLTAGE_PIN);
 GButton waterButton(WATER_BUTTON_PIN);
 GButton electrolyteButton(ELECTROLYTE_BUTTON_PIN);
 
-float getRealVoltage(int value)
-{
-	// return float(value)/* * 3.3 / 4095.0*/;
-  return constrain(value, 0, 3300);
-}
-
 uint32_t tmr = 0;
 
 float expectedVoltage = -1.0;
-float waterVolume = 0.1;
+float currentWaterVolume = 100;
+float lastVoltage, lastWaterVolume = 100;
 float electrolyteVolume = 0.0;
 float pH = 7.0;
 
@@ -30,33 +24,40 @@ void setup() {
 
 	Serial.begin(9600);
 
-  waterButton.setTickMode(AUTO);
-  electrolyteButton.setTickMode(AUTO);
+	waterButton.setTickMode(AUTO);
+	electrolyteButton.setTickMode(AUTO);
+
+	lastVoltage = voltageSensor.getInvertedVoltage();
 }
 
 void loop() {
-	int measuredVoltage = voltageSensor.getMeasurement();
-	int filteredVoltage = testFilter.filtered(measuredVoltage);
-	float realVoltage = getRealVoltage(filteredVoltage);
+	float currentVoltage = voltageSensor.getInvertedVoltage();
 
 	if (waterButton.isClick())
 	{
-		waterVolume -= 0.01;
-		expectedVoltage -= 0.01 * WATER_COEFFICIENT;
+		currentWaterVolume += 100;
+		lastWaterVolume = currentWaterVolume;
+		lastVoltage = currentVoltage;
 	}
-	if (electrolyteButton.isClick())
-	{
-		electrolyteVolume -= 0.005;
-		expectedVoltage -= 0.005 * ELECTROLYTE_COEFFICIENT;
-	}
+	// if (electrolyteButton.isClick())
+	// {
+	// 	electrolyteVolume -= 0.005;
+	// 	expectedVoltage -= 0.005 * ELECTROLYTE_COEFFICIENT;
+	// }
 
-	if (waterButton.isHold())
-	{
-		expectedVoltage = realVoltage;
-	}
+	currentWaterVolume = currentVoltage / lastVoltage * lastWaterVolume;
+
+	float soilMosture = currentWaterVolume / SOIL_VOLUME * 100.0;
+
 	if (millis() - tmr >= 2000) {
-		Serial.print(realVoltage);
+		Serial.print(lastWaterVolume);
 		Serial.print(' ');
-		Serial.println(expectedVoltage);
+		Serial.print(lastVoltage);
+		Serial.print(';');
+		Serial.print(currentWaterVolume);
+		Serial.print(' ');
+		Serial.print(currentVoltage);
+		Serial.print(' ');
+		Serial.println(soilMosture);
 	}
 }
