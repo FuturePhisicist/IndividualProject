@@ -15,20 +15,20 @@ public:
 		return analogRead(sensorPin);
 	};
 
-	float getRealVoltage(int value)
+	double getRealVoltage(int value)
 	{
 		return constrain(value, 0, 3300);
 	};
 
-	float getVoltage()
+	double getVoltage()
 	{
 		int measuredVoltage = getMeasurement();
 		int filteredVoltage = voltageFilter.filtered(measuredVoltage);
-		// float currentVoltage = getRealVoltage(filteredVoltage);
+		// double currentVoltage = getRealVoltage(filteredVoltage);
 		return getRealVoltage(filteredVoltage);
 	};
 
-	float getInvertedVoltage()
+	double getInvertedVoltage()
 	{
 		return 3300 - getVoltage();
 	};
