@@ -1,6 +1,7 @@
 #pragma once
 #include "Arduino.h"
 #include "GyverFilters.h"
+#include "templateMap.h"
 
 class VoltageSensor
 {
@@ -15,9 +16,9 @@ public:
 		return analogRead(sensorPin);
 	};
 
-	double getRealVoltage(int value)
+	double getRealVoltage(double value)
 	{
-		return constrain(value, 0, 3300);
+		return templateMap(value, 0.0, 4095.0, 0.0, 3300.0);
 	};
 
 	double getVoltage()

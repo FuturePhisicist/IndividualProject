@@ -1,6 +1,8 @@
 #include "GyverButton.h"
 #include "VoltageSensor.h"
+#include "LightSensor.h"
 #include "math.h"
+const int LIGHT_PIN = 33;
 const int VOLTAGE_PIN = 34;
 const int WATER_BUTTON_PIN = 35;
 const int ELECTROLYTE_BUTTON_PIN = 32;
@@ -17,6 +19,7 @@ double get_pH(double Hplus)
 }
 // pH dedicated
 
+LightSensor lightSensor(LIGHT_PIN);
 VoltageSensor voltageSensor(VOLTAGE_PIN);
 GButton waterButton(WATER_BUTTON_PIN);
 GButton electrolyteButton(ELECTROLYTE_BUTTON_PIN);
@@ -66,16 +69,10 @@ void loop() {
 	// pH dedicated
 
 	if (millis() - tmr >= 2000) {
-		Serial.print(lastWaterVolume);
-		Serial.print(' ');
-		Serial.print(lastVoltage);
-		Serial.print(';');
-		Serial.print(currentWaterVolume);
-		Serial.print(' ');
-		Serial.print(currentVoltage);
-		Serial.print(';');
 		Serial.print(get_pH(Hplus));
 		Serial.print(' ');
-		Serial.println(soilMosture);
+		Serial.print(soilMosture);		
+		Serial.print(' ');
+		Serial.println(lightSensor.getLux());
 	}
 }
