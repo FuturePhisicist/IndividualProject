@@ -69,7 +69,7 @@ VoltageSensor voltageSensor(VOLTAGE_PIN);
 GButton waterButton(WATER_BUTTON_PIN);
 GButton electrolyteButton(ELECTROLYTE_BUTTON_PIN);
 
-uint32_t tmr = 0;
+volatile uint32_t tmr = 0;
 
 double currentWaterVolume = 100;
 double lastVoltage, lastWaterVolume = 100;
@@ -138,28 +138,9 @@ void loop() {
 	data += ' ';
 	data += lightSensor.getLux();
 
-	// if (millis() - tmr >= 2000) {
-	// 	Serial.print(currentTime);
-	// 	Serial.print(' ');
-	// 	Serial.print(get_pH(Hplus));
-	// 	Serial.print(' ');
-	// 	Serial.print(soilMosture);		
-	// 	Serial.print(' ');
-	// 	Serial.println(lightSensor.getLux());
-	// }
-
 	if (millis() - tmr >= 10000) {
 		if (client.connect(SERVER_IP, SERVER_PORT))
 		{
-			// client.print(POT_ID);
-			// client.print(' ');
-			// client.print(currentTime);
-			// client.print(' ');
-			// client.print(get_pH(Hplus));
-			// client.print(' ');
-			// client.print(soilMosture);		
-			// client.print(' ');
-			// client.println(lightSensor.getLux());
 			client.println(data);
 			client.flush();
 			client.stop();
