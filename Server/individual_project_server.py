@@ -1,25 +1,23 @@
 import socket
 
-# create a socket object
 server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-# specify the IP address and port to listen on
-ip = '192.168.1.71' # replace with your server's IP address
-port = 8000
-server_socket.bind((ip, port))
+IP = '192.168.1.71' # replace with your server's IP address
+PORT = 8000
+server_socket.bind((IP, PORT))
 
-# become a server socket
-server_socket.listen(5)
+server_socket.listen(10)
 
 while True:
-    # establish a connection
     client_socket, addr = server_socket.accept()
 
-    # receive data from the client
-    data = client_socket.recv(1024)
+    data = client_socket.recv(1024).decode()
 
-    # print the received data
-    print(data)
+    # print(data)
 
-    # close the connection
+    POT_ID = int(data.split(' ')[0])
+    with open('measurements/' + str(POT_ID) + '.txt', 'a') as f:
+            s = ''.join(data[1:])[1:]
+            f.write(s + '\n')
+
     client_socket.close()
