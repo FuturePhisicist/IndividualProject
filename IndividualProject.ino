@@ -1,8 +1,15 @@
-#include "GyverButton.h"
+#include <GyverButton.h>
+#include <math.h>
+#include <Ds1302.h>
+#include <WiFi.h>
+
 #include "VoltageSensor.h"
 #include "LightSensor.h"
-#include "math.h"
-#include <Ds1302.h>
+#include "Settings.h"
+
+const char* SERVER_IP = "192.168.1.71";
+const int SERVER_PORT = 8000;
+const int POT_ID = 7;
 
 const int RST_PIN = 17;
 const int DAT_PIN = 16;
@@ -55,6 +62,7 @@ String get_time(const Ds1302::DateTime& now)
 	return currentTime;
 }
 
+WiFiClient client;
 Ds1302 rtc(RST_PIN, CLK_PIN, DAT_PIN);
 LightSensor lightSensor(LIGHT_PIN);
 VoltageSensor voltageSensor(VOLTAGE_PIN);
@@ -77,6 +85,15 @@ void setup() {
 	electrolyteButton.setTickMode(AUTO);
 
 	lastVoltage = voltageSensor.getInvertedVoltage();
+
+	WiFi.begin(SSID, PASSWORD);
+	Serial.println("Connecting to WiFi...");
+	while (WiFi.status() != WL_CONNECTED)
+	{
+		delay(1000);
+		Serial.print("...");
+	}
+	Serial.println("Connected to WiFi");
 }
 
 void loop() {
@@ -111,13 +128,47 @@ void loop() {
 
 	const String currentTime = get_time(now);
 
-	if (millis() - tmr >= 2000) {
-		Serial.print(currentTime);
-		Serial.print(' ');
-		Serial.print(get_pH(Hplus));
-		Serial.print(' ');
-		Serial.print(soilMosture);		
-		Serial.print(' ');
-		Serial.println(lightSensor.getLux());
+	String data = String(POT_ID);
+	data += ' ';
+	data += currentTime;
+	data += ' ';
+	data += get_pH(Hplus);
+	data += ' ';
+	data += soilMosture;
+	data += ' ';
+	data += lightSensor.getLux();
+
+	// if (millis() - tmr >= 2000) {
+	// 	Serial.print(currentTime);
+	// 	Serial.print(' ');
+	// 	Serial.print(get_pH(Hplus));
+	// 	Serial.print(' ');
+	// 	Serial.print(soilMosture);		
+	// 	Serial.print(' ');
+	// 	Serial.println(lightSensor.getLux());
+	// }
+
+	if (millis() - tmr >= 10000) {
+		if (client.connect(SERVER_IP, SERVER_PORT))
+		{
+			// client.print(POT_ID);
+			// client.print(' ');
+			// client.print(currentTime);
+			// client.print(' ');
+			// client.print(get_pH(Hplus));
+			// client.print(' ');
+			// client.print(soilMosture);		
+			// client.print(' ');
+			// client.println(lightSensor.getLux());
+			client.println(data);
+			client.flush();
+			client.stop();
+			Serial.println("Message sent to server");
+		} 
+		else
+		{
+			Serial.println("Error connecting to server");
+		}
+		tmr = millis();
 	}
 }
