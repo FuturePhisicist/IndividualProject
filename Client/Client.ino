@@ -14,12 +14,17 @@ const int POT_ID = 7;
 const int RST_PIN = 17;
 const int DAT_PIN = 16;
 const int CLK_PIN = 4;
+const int PUMP_PIN = 27;
 
 const int LIGHT_PIN = 33;
 const int VOLTAGE_PIN = 34;
 const int WATER_BUTTON_PIN = 35;
 const int ELECTROLYTE_BUTTON_PIN = 32;
 
+const double PUMP_PRODUCTIVITY = 100.0; // ml/sec
+const int PUMP_WORK_TIME = 100; // sec
+
+const double MIN_MOISTURE = 0.54;
 const double SOIL_VOLUME = 100.0; // ml
 
 // pH dedicated
@@ -69,10 +74,13 @@ VoltageSensor voltageSensor(VOLTAGE_PIN);
 GButton waterButton(WATER_BUTTON_PIN);
 GButton electrolyteButton(ELECTROLYTE_BUTTON_PIN);
 
-volatile uint32_t tmr = 0;
+uint32_t tmr = 0;
 
-double currentWaterVolume = 100;
-double lastVoltage, lastWaterVolume = 100;
+uint32_t pump_tmr;
+bool pumpOn = false;
+
+double currentWaterVolume = 100.0;
+double lastVoltage, lastWaterVolume = currentWaterVolume;
 
 double Hplus = pow(10, -7);
 
@@ -85,6 +93,8 @@ void setup() {
 	electrolyteButton.setTickMode(AUTO);
 
 	lastVoltage = voltageSensor.getInvertedVoltage();
+
+	pinMode(PUMP_PIN, OUTPUT);
 
 	WiFi.begin(SSID, PASSWORD);
 	Serial.println("Connecting to WiFi...");
@@ -99,23 +109,35 @@ void setup() {
 void loop() {
 	double currentVoltage = voltageSensor.getInvertedVoltage();
 
-	if (waterButton.isClick())
-	{
-		currentWaterVolume += 100;
-		lastWaterVolume = currentWaterVolume;
-		lastVoltage = currentVoltage;
-	}
-
 	currentWaterVolume = currentVoltage / lastVoltage * lastWaterVolume;
 
 	double soilMosture = currentWaterVolume / SOIL_VOLUME * 100.0;
+
+	// pump dedicated
+	Serial.println(pumpOn);
+	const uint32_t CURRENT_MILLIS = millis();
+	if (not pumpOn and soilMosture < MIN_MOISTURE) {
+		digitalWrite(PUMP_PIN, HIGH);
+		pumpOn = true;
+		pump_tmr = CURRENT_MILLIS;
+	}
+	if (pumpOn and CURRENT_MILLIS - pump_tmr >= PUMP_WORK_TIME * 1000) {
+		digitalWrite(PUMP_PIN, LOW);
+		pumpOn = false;
+
+		currentWaterVolume += PUMP_WORK_TIME * PUMP_PRODUCTIVITY;
+		lastWaterVolume = currentWaterVolume;
+		lastVoltage = currentVoltage;
+	}
+	// pump dedicated
 
 	// pH dedicated
 	if (electrolyteButton.isClick())
 	{
 		double electrolyteMass = 10; // g
+		double addedWaterVolume = 100; // ml
 		double electrolyteAmount = electrolyteMass / MolarMass; // mol
-		double electrolyteConcentration = electrolyteAmount / 1; // mol/ml // change 1 to addedWaterVolume
+		double electrolyteConcentration = electrolyteAmount / addedWaterVolume; // mol/ml
 
 		double deltaHplus = -Ka / 2 + sqrt((Ka / 2) * (Ka / 2) + Ka * electrolyteConcentration);
 
@@ -137,6 +159,8 @@ void loop() {
 	data += soilMosture;
 	data += ' ';
 	data += lightSensor.getLux();
+
+	Serial.println(data);
 
 	if (millis() - tmr >= 10000) {
 		if (client.connect(SERVER_IP, SERVER_PORT))
