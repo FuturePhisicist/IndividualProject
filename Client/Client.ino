@@ -125,9 +125,9 @@ void loop() {
 		digitalWrite(PUMP_PIN, LOW);
 		pumpOn = false;
 
-		currentWaterVolume += PUMP_WORK_TIME * PUMP_PRODUCTIVITY;
-		lastWaterVolume = currentWaterVolume;
-		lastVoltage = currentVoltage;
+		// currentWaterVolume += PUMP_WORK_TIME * PUMP_PRODUCTIVITY;
+		// lastWaterVolume = currentWaterVolume;
+		// lastVoltage = currentVoltage;
 	}
 	// pump dedicated
 
