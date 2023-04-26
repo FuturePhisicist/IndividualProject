@@ -111,12 +111,12 @@ void loop() {
 
 	currentWaterVolume = currentVoltage / lastVoltage * lastWaterVolume;
 
-	double soilMosture = currentWaterVolume / SOIL_VOLUME * 100.0;
+	double soilMoisture = currentWaterVolume / SOIL_VOLUME * 100.0;
 
 	// pump dedicated
 	Serial.println(pumpOn);
 	const uint32_t CURRENT_MILLIS = millis();
-	if (not pumpOn and soilMosture < MIN_MOISTURE) {
+	if (not pumpOn and soilMoisture < MIN_MOISTURE) {
 		digitalWrite(PUMP_PIN, HIGH);
 		pumpOn = true;
 		pump_tmr = CURRENT_MILLIS;
@@ -156,7 +156,7 @@ void loop() {
 	data += ' ';
 	data += get_pH(Hplus);
 	data += ' ';
-	data += soilMosture;
+	data += soilMoisture;
 	data += ' ';
 	data += lightSensor.getLux();
 
